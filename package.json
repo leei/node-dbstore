@@ -1,0 +1,8 @@
+{
+  "name": "dbstore",
+  "version": "0.0.1",
+  "description": "Node.js bindings for Berkeley DB 6.x",
+  "main": "index.js",
+  "private": true,
+  "gypfile": true
+}
