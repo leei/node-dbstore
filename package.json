@@ -4,5 +4,8 @@
   "description": "Node.js bindings for Berkeley DB 6.x",
   "main": "index.js",
   "private": true,
-  "gypfile": true
+  "gypfile": true,
+  "scripts": {
+      "preinstall": "make config build_db"
+  }
 }
