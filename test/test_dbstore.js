@@ -29,14 +29,17 @@ dbstore.open("foo.db", function (err, val) {
 	  //console.log("get " + key + " => " + str);
 	  assert(str == key);
 
-	  // Don't try to del same key twice...
-	  if (dels[key]) { return next(err); }
-
+	  var wont_del = dels[key];
 	  dels[key] = true;
 	  dbstore.del(key, function (err) {
-	    if (err) { console.error("key[" + key + "] " + err.stack); }
-	    assert.ifError(err);
-	    next(err);
+	    if (wont_del) { //Expect error...
+	      assert(err);
+	    } else {
+	      if (err) { console.error("key[" + key + "] " + err.stack); }
+	      assert.ifError(err);
+	    }
+	    dels[key] = true;
+	    next();
 	  });
 	});
       });
