@@ -43,7 +43,7 @@ DbStore::open(char const *fname, char const *db,
   int ret = db_create(&_db, NULL, 0);
   if (ret) return ret;
   
-  fprintf(stderr, "%p: open %p\n", this, _db);
+  //fprintf(stderr, "%p: open %p\n", this, _db);
   return _db->open(_db, NULL, fname, db, type, flags, mode);
 }
 
@@ -52,7 +52,7 @@ DbStore::close()
 {
   int ret = 0;
   if (_db && _db->pgsize) {
-    fprintf(stderr, "%p: close %p\n", this, _db);
+    //fprintf(stderr, "%p: close %p\n", this, _db);
     ret = _db->close(_db, 0);
     _db = NULL;
   }
@@ -135,7 +135,7 @@ static void
 After(WorkBaton *baton, Handle<Value> *argv, int argc)
 {
   if (baton->ret) {
-    fprintf(stderr, "%s %s error %d\n", baton->call, baton->str_arg, baton->ret);
+    //fprintf(stderr, "%s %s error %d\n", baton->call, baton->str_arg, baton->ret);
     argv[0] = node::UVException(0, baton->call, db_strerror(baton->ret));
   } else {
     argv[0] = Local<Value>::New(Null());
