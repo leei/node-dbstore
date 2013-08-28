@@ -3,3 +3,4 @@ deps/db-6.0.20/docs
 deps/db-6.0.20/lang
 deps/db-6.0.20/build_unix
 
+node_modules
