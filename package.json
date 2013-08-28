@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "description": "Node.js bindings for Berkeley DB 6.x",
   "author": "Lee Iverson <leei@sociologi.ca>",
+  "homepage": "http://github.com/leei/node-dbstore",
   "repository": {
     "type": "git",
     "url": "https://github.com/leei/node-dbstore.git"
