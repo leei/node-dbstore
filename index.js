@@ -18,7 +18,20 @@ DbStore.prototype.put = function (key, val, opts, cb) {
     buf = new Buffer(val, 'utf8');
   }
 
-  return this._put(key, buf, cb);
+  var dbstore = this;
+  function put(buf) {
+    return dbstore._put(key, buf, cb);
+  }
+
+  if (! opts.zlib) {
+    return put(buf);
+  }
+  
+  var zlib = require('zlib');
+  zlib.deflateRaw(buf, function (err, new_buf) {
+    if (err) { return cb(err); }
+    put(new_buf);
+  });
 };
 
 
@@ -30,18 +43,31 @@ DbStore.prototype.get = function (key, opts, cb) {
   }
 
   return this._get(key, function (err, buf) {
-    if (! err) {
-      if (opts.encoding) {
-	buf = buf.toString(opts.encoding);
+    if (err) { return cb(err, buf); }
+
+    function decode(buf) {
+      if (opts.encoding || opts.json) {
+	buf = buf.toString(opts.encoding || 'utf8');
       }
       if (opts.json) {
 	try {
 	  buf = JSON.parse(buf);
 	} catch (x) {
+	  err = x;
 	}
       }
+      cb(err, buf);
     }
-    cb(err, buf);
+
+    if (! opts.zlib) {
+      return decode(buf);
+    }
+      
+    var zlib = require('zlib');
+    zlib.inflateRaw(buf, function (err, new_buf) {
+      if (err) { return cb(err, buf); }
+      decode(new_buf);
+    });
   });
 };
 
