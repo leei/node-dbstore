@@ -1,4 +1,4 @@
-var addon = require("./build/Release/addon.node");
+var addon = require("bindings")("addon.node");
 
 var DbStore = addon.DbStore;
 
@@ -26,7 +26,7 @@ DbStore.prototype.put = function (key, val, opts, cb) {
   if (! opts.zlib) {
     return put(buf);
   }
-  
+
   var zlib = require('zlib');
   zlib.deflateRaw(buf, function (err, new_buf) {
     if (err) { return cb(err); }
@@ -47,14 +47,14 @@ DbStore.prototype.get = function (key, opts, cb) {
 
     function decode(buf) {
       if (opts.encoding || opts.json) {
-	buf = buf.toString(opts.encoding || 'utf8');
+        buf = buf.toString(opts.encoding || 'utf8');
       }
       if (opts.json) {
-	try {
-	  buf = JSON.parse(buf);
-	} catch (x) {
-	  err = x;
-	}
+        try {
+          buf = JSON.parse(buf);
+        } catch (x) {
+          err = x;
+        }
       }
       cb(err, buf);
     }
@@ -62,7 +62,7 @@ DbStore.prototype.get = function (key, opts, cb) {
     if (! opts.zlib) {
       return decode(buf);
     }
-      
+
     var zlib = require('zlib');
     zlib.inflateRaw(buf, function (err, new_buf) {
       if (err) { return cb(err, buf); }

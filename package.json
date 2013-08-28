@@ -15,9 +15,12 @@
   "private": false,
   "gypfile": true,
   "scripts": {
-      "preinstall": "make config build_db"
+    "preinstall": "make config all"
   },
   "devDependencies": {
-      "async": "0.2.x"
+    "async": "0.2.x"
+  },
+  "dependencies": {
+    "bindings": "1.x.x"
   }
 }
