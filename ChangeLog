@@ -1,0 +1,9 @@
+v 0.1.2
+	* Clean up memory mgmt
+	* Handle expected del failures in test
+
+v 0.1.1
+	* Add zlib and json handling to put/get
+
+v 0.1.0
+	* First checkin.  Very basic functionality
