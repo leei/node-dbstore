@@ -5,10 +5,12 @@ all: build_db
 
 clean:
 	$(MAKE) -C $(DB_BUILD) clean
+	node-gyp clean
 
 config:
 	mkdir -p $(DB_BUILD)
-	cd $(DB_BUILD) && ../dist/configure --disable-shared --enable-debug
+	cd $(DB_BUILD) && ../dist/configure --disable-shared #--enable-debug
+	node-gyp configure
 
 build_db:
 	$(MAKE) -C $(DB_BUILD) libdb-6.0.a
