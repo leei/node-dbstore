@@ -3,6 +3,8 @@
 
 #include "dbstore.h"
 
+#include <cstdlib>
+
 using namespace v8;
 
 DbStore::DbStore() : _db(0), _env(0), _txn(0) {};
@@ -38,16 +40,16 @@ void DbStore::Init(Handle<Object> target) {
 
 int
 DbStore::open(char const *fname, char const *db,
-	      DBTYPE type, u_int32_t flags, int mode)
+              DBTYPE type, u_int32_t flags, int mode)
 {
   int ret = db_create(&_db, NULL, 0);
   if (ret) return ret;
-  
+
   //fprintf(stderr, "%p: open %p\n", this, _db);
   return _db->open(_db, NULL, fname, db, type, flags, mode);
 }
 
-int 
+int
 DbStore::close()
 {
   int ret = 0;
@@ -68,25 +70,25 @@ dbt_set(DBT *dbt, void *data, u_int32_t size, u_int32_t flags = DB_DBT_USERMEM)
   dbt->flags = flags;
 }
 
-int 
+int
 DbStore::put(DBT *key, DBT *data, u_int32_t flags)
 {
   return _db->put(_db, 0, key, data, flags);
 }
 
-int 
+int
 DbStore::get(DBT *key, DBT *data, u_int32_t flags)
 {
   return _db->get(_db, 0, key, data, flags);
 }
 
-int 
+int
 DbStore::del(DBT *key, u_int32_t flags)
 {
   return _db->del(_db, 0, key, flags);
 }
 
-int 
+int
 DbStore::sync(u_int32_t flags)
 {
   return 0;
@@ -154,7 +156,7 @@ After(WorkBaton *baton, Handle<Value> *argv, int argc)
   delete baton;
 }
 
-void 
+void
 OpenWork(uv_work_t *req) {
   WorkBaton *baton = (WorkBaton *) req->data;
 
@@ -163,7 +165,7 @@ OpenWork(uv_work_t *req) {
   baton->ret = store->open(baton->str_arg, NULL, DB_BTREE, DB_CREATE|DB_THREAD, 0);
 }
 
-void 
+void
 OpenAfter(uv_work_t *req) {
   HandleScope scope;
 
@@ -188,7 +190,7 @@ Handle<Value> DbStore::Open(const Arguments& args) {
 
   if (! args[1]->IsFunction()) {
     ThrowException(Exception::TypeError(String::New("Second argument must be callback function")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
 
   // create an async work token
@@ -201,13 +203,13 @@ Handle<Value> DbStore::Open(const Arguments& args) {
   String::Utf8Value fname(args[0]);
   baton->str_arg = strdup(*fname);
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
-  
+
   uv_queue_work(uv_default_loop(), req, OpenWork, OpenAfter);
 
   return args.This();
 }
 
-static void 
+static void
 CloseWork(uv_work_t *req) {
   WorkBaton *baton = (WorkBaton *) req->data;
 
@@ -216,7 +218,7 @@ CloseWork(uv_work_t *req) {
   baton->ret = store->close();
 }
 
-static void 
+static void
 CloseAfter(uv_work_t *req) {
   HandleScope scope;
 
@@ -235,7 +237,7 @@ Handle<Value> DbStore::Close(const Arguments& args) {
 
   if (! args[0]->IsFunction()) {
     ThrowException(Exception::TypeError(String::New("Argument must be callback function")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
 
   // create an async work token
@@ -248,11 +250,11 @@ Handle<Value> DbStore::Close(const Arguments& args) {
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[0]));
 
   uv_queue_work(uv_default_loop(), req, CloseWork, CloseAfter);
-  
+
   return args.This();
 }
 
-static void 
+static void
 PutWork(uv_work_t *req) {
   WorkBaton *baton = (WorkBaton *) req->data;
 
@@ -263,15 +265,15 @@ PutWork(uv_work_t *req) {
 
   DBT data_dbt;
   dbt_set(&data_dbt,
-	  node::Buffer::Data(baton->data),
-	  node::Buffer::Length(baton->data));
+          node::Buffer::Data(baton->data),
+          node::Buffer::Length(baton->data));
 
   baton->call = "put";
   baton->ret = store->put(&key_dbt, &data_dbt, 0);
   //fprintf(stderr, "put %s\n", baton->str_arg);
 }
 
-static void 
+static void
 PutAfter(uv_work_t *req) {
   HandleScope scope;
 
@@ -290,19 +292,19 @@ Handle<Value> DbStore::Put(const Arguments& args) {
 
   if (! args.Length() > 0 && ! args[0]->IsString()) {
      ThrowException(Exception::TypeError(String::New("First argument must be a string")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
   String::Utf8Value key(args[0]);
 
   if (! args.Length() > 1 && ! node::Buffer::HasInstance(args[1])) {
      ThrowException(Exception::TypeError(String::New("Second argument must be a Buffer")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
   Persistent<Object> data = Persistent<Object>::New(Local<Object>::Cast(args[1]));
 
   if (! args.Length() > 2 && ! args[2]->IsFunction()) {
     ThrowException(Exception::TypeError(String::New("Argument must be callback function")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
 
   // create an async work token
@@ -315,19 +317,19 @@ Handle<Value> DbStore::Put(const Arguments& args) {
   baton->str_arg = strdup(*key);
   baton->data = data;
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
-  
+
   uv_queue_work(uv_default_loop(), req, PutWork, PutAfter);
 
   return args.This();
 }
 
-static void 
+static void
 GetWork(uv_work_t *req) {
   WorkBaton *baton = (WorkBaton *) req->data;
 
   DbStore *store = baton->store;
 
-  DBT key_dbt; 
+  DBT key_dbt;
   dbt_set(&key_dbt, baton->str_arg, strlen(baton->str_arg));
 
   DBT *retbuf = &baton->retbuf;
@@ -345,7 +347,7 @@ free_buf(char *data, void *hint)
   free(data);
 }
 
-static void 
+static void
 GetAfter(uv_work_t *req) {
   HandleScope scope;
 
@@ -354,10 +356,10 @@ GetAfter(uv_work_t *req) {
 
   // create an arguments array for the callback
   Handle<Value> argv[2];
-  
+
   DBT *retbuf = &baton->retbuf;
   node::Buffer *buf = node::Buffer::New((char*)retbuf->data, retbuf->size,
-					free_buf, NULL);
+                                        free_buf, NULL);
   argv[1] = buf->handle_;
   After(baton, argv, 2);
 }
@@ -369,13 +371,13 @@ Handle<Value> DbStore::Get(const Arguments& args) {
 
   if (! args.Length() > 0 && ! args[0]->IsString()) {
      ThrowException(Exception::TypeError(String::New("First argument must be a string")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
   String::Utf8Value key(args[0]);
 
   if (! args.Length() > 1 && ! args[1]->IsFunction()) {
     ThrowException(Exception::TypeError(String::New("Argument must be callback function")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
 
   // create an async work token
@@ -387,19 +389,19 @@ Handle<Value> DbStore::Get(const Arguments& args) {
 
   baton->str_arg = strdup(*key);
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
-  
+
   uv_queue_work(uv_default_loop(), req, GetWork, GetAfter);
 
   return args.This();
 }
 
-static void 
+static void
 DelWork(uv_work_t *req) {
   WorkBaton *baton = (WorkBaton *) req->data;
 
   DbStore *store = baton->store;
 
-  DBT key_dbt; 
+  DBT key_dbt;
   dbt_set(&key_dbt, baton->str_arg, strlen(baton->str_arg));
 
   //fprintf(stderr, "del %s\n", baton->str_arg);
@@ -414,13 +416,13 @@ Handle<Value> DbStore::Del(const Arguments& args) {
 
   if (! args.Length() > 0 && ! args[0]->IsString()) {
      ThrowException(Exception::TypeError(String::New("First argument must be a string")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
   String::Utf8Value key(args[0]);
 
   if (! args.Length() > 1 && ! args[1]->IsFunction()) {
     ThrowException(Exception::TypeError(String::New("Argument must be callback function")));
-    return scope.Close(Undefined()); 
+    return scope.Close(Undefined());
   }
 
   // create an async work token
@@ -432,7 +434,7 @@ Handle<Value> DbStore::Del(const Arguments& args) {
 
   baton->str_arg = strdup(*key);
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
-  
+
   uv_queue_work(uv_default_loop(), req, DelWork, PutAfter); // Yes, use the same.
 
   return args.This();
