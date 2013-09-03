@@ -1,6 +1,6 @@
 {
   "name": "dbstore",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Node.js bindings for Berkeley DB 6.x",
   "author": "Lee Iverson <leei@sociologi.ca>",
   "homepage": "http://github.com/leei/node-dbstore",
