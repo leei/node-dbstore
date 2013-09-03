@@ -1,3 +1,6 @@
+v 0.1.5
+	* Add cstdlib for free() reference
+
 v 0.1.4
 	* Tweak build process. Works now.
 
