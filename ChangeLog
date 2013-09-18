@@ -1,3 +1,6 @@
+v 0.1.6
+	* Make compatible with node 0.10
+
 v 0.1.5
 	* Add cstdlib for free() reference
 

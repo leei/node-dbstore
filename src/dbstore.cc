@@ -166,7 +166,7 @@ OpenWork(uv_work_t *req) {
 }
 
 void
-OpenAfter(uv_work_t *req) {
+OpenAfter(uv_work_t *req, int status) {
   HandleScope scope;
 
   // fetch our data structure
@@ -204,7 +204,7 @@ Handle<Value> DbStore::Open(const Arguments& args) {
   baton->str_arg = strdup(*fname);
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
 
-  uv_queue_work(uv_default_loop(), req, OpenWork, OpenAfter);
+  uv_queue_work(uv_default_loop(), req, OpenWork, (uv_after_work_cb)OpenAfter);
 
   return args.This();
 }
@@ -219,7 +219,7 @@ CloseWork(uv_work_t *req) {
 }
 
 static void
-CloseAfter(uv_work_t *req) {
+CloseAfter(uv_work_t *req, int status) {
   HandleScope scope;
 
   // fetch our data structure
@@ -249,7 +249,7 @@ Handle<Value> DbStore::Close(const Arguments& args) {
 
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[0]));
 
-  uv_queue_work(uv_default_loop(), req, CloseWork, CloseAfter);
+  uv_queue_work(uv_default_loop(), req, CloseWork, (uv_after_work_cb)CloseAfter);
 
   return args.This();
 }
@@ -274,7 +274,7 @@ PutWork(uv_work_t *req) {
 }
 
 static void
-PutAfter(uv_work_t *req) {
+PutAfter(uv_work_t *req, int status) {
   HandleScope scope;
 
   // fetch our data structure
@@ -318,7 +318,7 @@ Handle<Value> DbStore::Put(const Arguments& args) {
   baton->data = data;
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
 
-  uv_queue_work(uv_default_loop(), req, PutWork, PutAfter);
+  uv_queue_work(uv_default_loop(), req, PutWork, (uv_after_work_cb)PutAfter);
 
   return args.This();
 }
@@ -348,7 +348,7 @@ free_buf(char *data, void *hint)
 }
 
 static void
-GetAfter(uv_work_t *req) {
+GetAfter(uv_work_t *req, int status) {
   HandleScope scope;
 
   // fetch our data structure
@@ -390,7 +390,7 @@ Handle<Value> DbStore::Get(const Arguments& args) {
   baton->str_arg = strdup(*key);
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
 
-  uv_queue_work(uv_default_loop(), req, GetWork, GetAfter);
+  uv_queue_work(uv_default_loop(), req, GetWork, (uv_after_work_cb)GetAfter);
 
   return args.This();
 }
@@ -435,7 +435,7 @@ Handle<Value> DbStore::Del(const Arguments& args) {
   baton->str_arg = strdup(*key);
   baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
 
-  uv_queue_work(uv_default_loop(), req, DelWork, PutAfter); // Yes, use the same.
+  uv_queue_work(uv_default_loop(), req, DelWork, (uv_after_work_cb)PutAfter); // Yes, use the same.
 
   return args.This();
 }
