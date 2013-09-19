@@ -410,9 +410,10 @@ DelWork(uv_work_t *req) {
   DBT key_dbt;
   dbt_set(&key_dbt, baton->str_arg, strlen(baton->str_arg));
 
-  //fprintf(stderr, "del %s\n", baton->str_arg);
+  //fprintf(stderr, "%p/%p: del %s\n", baton, req, baton->str_arg);
   baton->call = "del";
   baton->ret = store->del(&key_dbt, 0);
+  //fprintf(stderr, "%p/%p: del %s => %d\n", baton, req, baton->str_arg, baton->ret);
 }
 
 Handle<Value> DbStore::Del(const Arguments& args) {

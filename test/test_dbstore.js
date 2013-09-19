@@ -16,30 +16,28 @@ dbstore.open("foo.db", function (err, val) {
     var keys = [];
     for (var i = 0; i < 5000; ++i) {
       var key = (Math.random() * 1e6).toFixed(0); 
-      keys[i] = key;
+      keys[key] = (Math.random() * 1e6).toFixed(0);
     }
 
     var dels = {};
-    async.forEach(keys, function (key, next) {
-      //console.log("put " + key);
-      dbstore.put(key, key, function (err) {
+    async.forEach(Object.keys(keys), function (key, next) {
+      console.log("put " + key);
+      dbstore.put(key, keys[key], function (err) {
 	assert.ifError(err);
 	dbstore.get(key, function (err, str) {
 	  assert.ifError(err);
-	  //console.log("get " + key + " => " + str);
-	  assert(str == key);
+	  console.log("get " + key + " => " + str);
+	  assert(str == keys[key]);
 
-	  var wont_del = dels[key];
-	  dels[key] = true;
+	  console.log("del " + key);
 	  dbstore.del(key, function (err) {
-	    if (wont_del) { //Expect error...
+	    if (err) { console.error("del key[" + key + "] " + err.stack); }
+	    assert.ifError(err);
+
+	    dbstore.get(key, function(err, str) {
 	      assert(err);
-	    } else {
-	      if (err) { console.error("key[" + key + "] " + err.stack); }
-	      assert.ifError(err);
-	    }
-	    dels[key] = true;
-	    next();
+	      next();
+	    });
 	  });
 	});
       });
