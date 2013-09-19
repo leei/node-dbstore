@@ -9,7 +9,7 @@ using namespace v8;
 
 DbStore::DbStore() : _db(0), _env(0), _txn(0) {};
 DbStore::~DbStore() {
-  fprintf(stderr, "~DbStore %p\n", this);
+  //fprintf(stderr, "~DbStore %p\n", this);
   close();
 };
 
@@ -108,10 +108,11 @@ struct WorkBaton {
   DbStore *store;
 
   char *str_arg;
+  Persistent<Value> data;
   Persistent<Function> callback;
-  Persistent<Object> data;
 
   char const *call;
+  DBT inbuf;
   DBT retbuf;
   int ret;
 
@@ -121,15 +122,15 @@ struct WorkBaton {
 
 
 WorkBaton::WorkBaton(uv_work_t *_r, DbStore *_s) : req(_r), store(_s), str_arg(0) {
-  //fprintf(stderr, "new WorkBaton %p\n", this);
+  //fprintf(stderr, "new WorkBaton %p:%p\n", this, req);
 }
 WorkBaton::~WorkBaton() {
-  //fprintf(stderr, "~WorkBaton %p\n", this);
+  //fprintf(stderr, "~WorkBaton %p:%p\n", this, req);
   delete req;
 
   if (str_arg) free(str_arg);
-  callback.Dispose();
   data.Dispose();
+  callback.Dispose();
   // Ignore retbuf since it will be freed by Buffer
 }
 
@@ -202,7 +203,7 @@ Handle<Value> DbStore::Open(const Arguments& args) {
 
   String::Utf8Value fname(args[0]);
   baton->str_arg = strdup(*fname);
-  baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[1]));
+  baton->callback = Persistent<Function>::New(Handle<Function>::Cast(args[1]));
 
   uv_queue_work(uv_default_loop(), req, OpenWork, (uv_after_work_cb)OpenAfter);
 
@@ -257,20 +258,17 @@ Handle<Value> DbStore::Close(const Arguments& args) {
 static void
 PutWork(uv_work_t *req) {
   WorkBaton *baton = (WorkBaton *) req->data;
+  //fprintf(stderr, "DbStore::PutWork baton %p:%p\n", baton, req);
 
   DbStore *store = baton->store;
 
   DBT key_dbt;
   dbt_set(&key_dbt, baton->str_arg, strlen(baton->str_arg));
-
-  DBT data_dbt;
-  dbt_set(&data_dbt,
-          node::Buffer::Data(baton->data),
-          node::Buffer::Length(baton->data));
+  DBT &data_dbt = baton->inbuf;
 
   baton->call = "put";
-  baton->ret = store->put(&key_dbt, &data_dbt, 0);
-  //fprintf(stderr, "put %s\n", baton->str_arg);
+  //fprintf(stderr, "put %s %p[%d]\n", baton->str_arg, data_dbt.data, data_dbt.size);
+  baton->ret = store->put(&key_dbt, &baton->inbuf, 0);
 }
 
 static void
@@ -279,6 +277,7 @@ PutAfter(uv_work_t *req, int status) {
 
   // fetch our data structure
   WorkBaton *baton = (WorkBaton *)req->data;
+  //fprintf(stderr, "DbStore::PutAfter baton %p:%p\n", baton, req);
 
   // create an arguments array for the callback
   Handle<Value> argv[1];
@@ -300,23 +299,30 @@ Handle<Value> DbStore::Put(const Arguments& args) {
      ThrowException(Exception::TypeError(String::New("Second argument must be a Buffer")));
     return scope.Close(Undefined());
   }
-  Persistent<Object> data = Persistent<Object>::New(Local<Object>::Cast(args[1]));
+  Handle<Object> buf = args[1]->ToObject();
 
   if (! args.Length() > 2 && ! args[2]->IsFunction()) {
     ThrowException(Exception::TypeError(String::New("Argument must be callback function")));
     return scope.Close(Undefined());
   }
+  Handle<Function> cb = Handle<Function>::Cast(args[2]);
 
   // create an async work token
   uv_work_t *req = new uv_work_t;
 
   // assign our data structure that will be passed around
   WorkBaton *baton = new WorkBaton(req, obj);
+  //fprintf(stderr, "DbStore::Put %p baton %p\n", req, baton);
   req->data = baton;
 
   baton->str_arg = strdup(*key);
-  baton->data = data;
-  baton->callback = Persistent<Function>::New(Local<Function>::Cast(args[2]));
+
+  dbt_set(&baton->inbuf,
+          node::Buffer::Data(buf),
+          node::Buffer::Length(buf));
+
+  baton->data = Persistent<Value>::New(buf); // Ensure not GCed until complete
+  baton->callback = Persistent<Function>::New(cb);
 
   uv_queue_work(uv_default_loop(), req, PutWork, (uv_after_work_cb)PutAfter);
 
