@@ -1,3 +1,6 @@
+v 0.1.7
+	* Avoid v8 calls in PutWork
+
 v 0.1.6
 	* Make compatible with node 0.10
 
