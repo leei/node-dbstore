@@ -9,10 +9,10 @@ clean:
 
 config:
 	mkdir -p $(DB_BUILD)
-	cd $(DB_BUILD) && ../dist/configure --disable-shared #--enable-debug
+	TOP=`pwd` && cd $(DB_BUILD) && ../dist/configure --enable-debug --prefix=$$TOP #--disable-shared 
 	node-gyp configure
 
 build_db:
-	$(MAKE) -C $(DB_BUILD) libdb-6.0.a
+	$(MAKE) -C $(DB_BUILD) install
 
 

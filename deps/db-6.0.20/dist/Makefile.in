@@ -1083,9 +1083,9 @@ db_log_verify: db_log_verify@o@ util_cache@o@ util_sig@o@ $(DEF_LIB)
 # Library and standard utilities install.
 ##################################################
 library_install: install_setup
-library_install: install_include install_lib install_utilities install_docs
+library_install: install_include install_lib install_utilities #install_docs
 
-uninstall: uninstall_include uninstall_lib uninstall_utilities uninstall_docs
+uninstall: uninstall_include uninstall_lib uninstall_utilities #uninstall_docs
 
 install_setup:
 	@test -d $(DESTDIR)$(prefix) || \
