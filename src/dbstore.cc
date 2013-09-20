@@ -4,6 +4,7 @@
 #include "dbstore.h"
 
 #include <cstdlib>
+#include <cstring>
 
 using namespace v8;
 
@@ -268,7 +269,7 @@ PutWork(uv_work_t *req) {
 
   baton->call = "put";
   //fprintf(stderr, "put %s %p[%d]\n", baton->str_arg, data_dbt.data, data_dbt.size);
-  baton->ret = store->put(&key_dbt, &baton->inbuf, 0);
+  baton->ret = store->put(&key_dbt, &data_dbt, 0);
 }
 
 static void
